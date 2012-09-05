@@ -1,0 +1,84 @@
+#!/usr/bin/env zsh
+
+__gem_initialize()
+{
+  export gem_spec gem_name gem_version gem_file gem_tag
+  typeset gem_tag_prefix
+
+  if [[ -f .gem.config ]]
+  then __sm_variables_file_read_all .gem.config
+  fi
+
+  if [[ -n "${1:-}" ]]
+  then gem_spec=$1.gemspec
+  elif [[ -z "${gem_spec:-}" ]] # allow gem_spec in .gem.config
+  then gem_spec="$(ls *.gemspec | head -n 1)"
+  fi
+  gem_name="$(
+    ruby -rrubygems -e "puts Gem::Specification.load('./${gem_spec}').name"
+  )"
+  gem_version="$(
+    ruby -rrubygems -e "puts Gem::Specification.load('./${gem_spec}').version"
+  )"
+  gem_tag=${gem_tag_prefix:-}${gem_version} # gem_tag_prefix can be defined in .gem.config
+  gem_file=${gem_name}-${gem_version}.gem
+}
+
+__gem_build()
+{
+  gem build $gem_spec | cut -c 3-
+  [[ -f ${gem_file} ]]
+}
+
+__gem_build_cli()
+{
+  __gem_initialize "$@"
+  log step "Building gem" __gem_build
+}
+
+__gem_install()
+{
+  __gem_initialize "$@"
+  log step "Building gem" __gem_build
+  log step "Installing gem" gem install $gem_file
+}
+
+__gem_git_release()
+{
+  git commit -am $gem_version
+  git tag $gem_tag
+  git push
+  git push --tags
+}
+
+__gem_release()
+{
+  __gem_initialize "$@"
+  log step "Building gem" __gem_build
+  log step "Committing and pushing changes to git" __gem_git_release
+  log step "Releasing to rubygems" gem push $gem_file
+}
+
+__gem_info()
+{
+  __gem_initialize "$@"
+  printf "%b" "---
+gem:
+  name: ${gem_name}
+  version: ${gem_version}
+  tag: ${gem_tag}
+  spec: ${gem_spec}
+  file: ${gem_file}
+"
+}
+
+__gem_help()
+{
+  if (( $# == 0 ))
+  then log warn "No action given."
+  elif [[ "$1" != "help" ]]
+  then log warn "Unknown action '$1'."
+  fi
+  cat "${extension_path}/Help.md"
+  [[ "${1:-}" == "help" ]] || return 1
+}

@@ -1,0 +1,5 @@
+build=__gem_build_cli()
+install=__gem_install()
+release=__gem_release()
+info=__gem_info()
+=__gem_help()
