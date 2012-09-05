@@ -14,4 +14,4 @@ Extension:
 
 ## Usage
 
-Refer to [Help](https://github.com/mpapis/sm_gem/blob/master/README.md)
+Refer to [Help](https://github.com/mpapis/sm_gem/blob/master/Help.md)
